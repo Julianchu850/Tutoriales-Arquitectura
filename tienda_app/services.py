@@ -45,3 +45,35 @@ class CompraService:
         inv.save()
 
         return orden.total
+
+
+class CompraRapidaService:
+    def __init__(self, procesador_pago):
+        self.procesador_pago = procesador_pago
+
+    def procesar(self, libro_id):
+        libro = Libro.objects.get(id=libro_id)
+        inv = Inventario.objects.get(libro=libro)
+
+        if inv.cantidad <= 0:
+            raise ValueError("No hay existencias.")
+
+        total = CalculadorImpuestos.obtener_total_con_iva(libro.precio)
+
+        if self.procesador_pago.pagar(total):
+            inv.cantidad -= 1
+            inv.save()
+            return total
+
+        return None
+    
+
+class InventarioService:
+    def obtener_inventario(self):
+        return Inventario.objects.select_related('libro').all()
+
+    def actualizar_cantidad(self, libro_id, cantidad):
+        inv = Inventario.objects.get(libro__id=libro_id)
+        inv.cantidad = cantidad
+        inv.save()
+        return inv

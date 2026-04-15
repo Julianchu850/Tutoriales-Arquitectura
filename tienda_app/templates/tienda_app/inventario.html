@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Inventario de Libros</h1>
+
+    <table border="1" cellpadding="10">
+      <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Cantidad</th>
+        <th>Actualizar</th>
+      </tr>
+
+      {% for item in inventario %}
+      <tr>
+        <td>{{ item.libro.id }}</td>
+        <td>{{ item.libro.titulo }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="libro_id" value="{{ item.libro.id }}">
+            <input type="number" name="cantidad" min="1" required>
+            <button type="submit">Actualizar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+  </body>
+</html>

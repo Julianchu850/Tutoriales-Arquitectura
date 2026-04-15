@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from tienda_app.models import Libro
+from tienda_app.models import Libro, Orden
 
 
 class LibroSerializer(serializers.ModelSerializer):
