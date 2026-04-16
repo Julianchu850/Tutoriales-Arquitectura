@@ -16,6 +16,10 @@ class CompraAPIView(APIView):
     """
 
     def post(self, request):
+        print("CONTENT_TYPE:", request.content_type)
+        print("BODY RAW:", request.body)
+        print("DATA:", request.data)
+        
         serializer = OrdenInputSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
