@@ -1,10 +1,11 @@
+import json
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from tienda_app.infra.factories import PaymentFactory
 from tienda_app.services import CompraService
-
 from .serializers import OrdenInputSerializer
 
 
@@ -12,15 +13,23 @@ class CompraAPIView(APIView):
     """
     Endpoint para procesar compras via JSON.
     POST /api/v1/comprar/
-    Payload: {"libro_id": 1, "direccion_envio": "Calle 123", "cantidad": 1}
     """
 
     def post(self, request):
-        print("CONTENT_TYPE:", request.content_type)
-        print("BODY RAW:", request.body)
-        print("DATA:", request.data)
-        
-        serializer = OrdenInputSerializer(data=request.data)
+        # Caso 1: JSON normal (Postman, curl, frontend real)
+        data = request.data
+
+        # Caso 2: formulario de la interfaz web de DRF
+        if "_content" in request.data:
+            try:
+                data = json.loads(request.data["_content"])
+            except json.JSONDecodeError:
+                return Response(
+                    {"error": "El contenido JSON enviado desde la web no es válido."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = OrdenInputSerializer(data=data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -30,22 +39,26 @@ class CompraAPIView(APIView):
             gateway = PaymentFactory.get_processor()
             servicio = CompraService(procesador_pago=gateway)
             usuario = request.user if request.user.is_authenticated else None
+
             resultado = servicio.ejecutar_compra(
-                libro_id=datos['libro_id'],
-                cantidad=datos.get('cantidad', 1),
-                direccion=datos['direccion_envio'],
+                libro_id=datos["libro_id"],
+                cantidad=datos.get("cantidad", 1),
+                direccion=datos["direccion_envio"],
                 usuario=usuario,
             )
 
             return Response(
                 {
-                    'estado': 'exito',
-                    'mensaje': f'Orden creada. Total: {resultado}',
+                    "estado": "exito",
+                    "mensaje": f"Orden creada. Total: {resultado}",
                 },
                 status=status.HTTP_201_CREATED,
             )
 
         except ValueError as e:
-            return Response({'error': str(e)}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
