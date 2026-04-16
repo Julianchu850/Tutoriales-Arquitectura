@@ -27,6 +27,11 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
 
+  pagos_flask:
+   build: ./microservicio_pagos
+   expose:
+      - "5000"
+
   nginx:
     image: nginx:1.25-alpine
     ports:
